@@ -65,7 +65,7 @@ export default function RootLayout({ children }: PropsWithChildren) {
          <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
          <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
          <body className={`${inter.className} antialiased`}>
-            <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+            <ThemeProvider>
                <Header />
                <>{children}</>
                <Toaster />
