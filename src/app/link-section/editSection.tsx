@@ -1,47 +1,71 @@
 "use client";
 
 import * as z from "zod";
-import { Plus } from "lucide-react";
 import { useForm } from "react-hook-form";
+import { Pencil, Plus } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, Input } from "@root/components";
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@root/components";
 
-const createSectionSchema = z.object({
+export interface CreateSectionProps {
+   action: "Create";
+}
+
+export interface UpdateSectionProps {
+   action: "Update";
+   sectionTitle: string;
+}
+
+export type EditSectionProps = CreateSectionProps | UpdateSectionProps;
+
+const editSectionSchema = z.object({
    title: z.string().min(1, { message: "Please enter a suitable title for new section" }),
    description: z.string().optional(),
    color: z.string().optional(),
 });
 
-export default function CreateSection() {
-   const createSectionForm = useForm<z.infer<typeof createSectionSchema>>({
-      resolver: zodResolver(createSectionSchema),
+export default function EditSection(props: EditSectionProps) {
+   const editSectionForm = useForm<z.infer<typeof editSectionSchema>>({
+      resolver: zodResolver(editSectionSchema),
       defaultValues: { title: "", description: "", color: "#e11d48" },
    });
 
-   function onSectionCreation(values: z.infer<typeof createSectionSchema>) {
-      console.log(values);
+   function onSectionCreation(values: z.infer<typeof editSectionSchema>) {
+      console.log("Creating section");
    }
+
+   function onSectionUpdation(values: z.infer<typeof editSectionSchema>) {
+      console.log("Updating section");
+   }
+
+   const creationRoute = props.action === "Create";
+   const formAction = creationRoute ? onSectionCreation : onSectionUpdation;
 
    return (
       <Dialog>
          <DialogTrigger asChild>
-            <Button
-               type="button"
-               className="fixed bottom-4 right-3 rounded-full w-12 h-12 shadow-md sm:static sm:w-auto sm:h-auto sm:rounded-none"
-            >
-               <Plus className="sm:mr-2 h-5 w-5" /> <span className="hidden sm:block">Add Section</span>
-            </Button>
+            {creationRoute ? (
+               <Button
+                  type="button"
+                  className="fixed bottom-4 right-3 rounded-full w-12 h-12 shadow-md sm:static sm:w-auto sm:h-auto sm:rounded-none"
+               >
+                  <Plus className="sm:mr-2 h-5 w-5" /> <span className="hidden sm:block">{props.action} Section</span>
+               </Button>
+            ) : (
+               <Button variant="outline" size="icon" className="text-primary hover:text-primary">
+                  <Pencil />
+               </Button>
+            )}
          </DialogTrigger>
          <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-               <DialogTitle className="text-xl text-primary">Create Section</DialogTitle>
+               <DialogTitle className="text-xl text-primary">{props.action} Section</DialogTitle>
             </DialogHeader>
             {/* form starts here */}
-            <Form {...createSectionForm}>
-               <form onSubmit={createSectionForm.handleSubmit(onSectionCreation)} className="space-y-8">
+            <Form {...editSectionForm}>
+               <form onSubmit={editSectionForm.handleSubmit(formAction)} className="space-y-8">
                   <FormField
-                     control={createSectionForm.control}
+                     control={editSectionForm.control}
                      name="title"
                      render={({ field }) => (
                         <FormItem>
@@ -54,7 +78,7 @@ export default function CreateSection() {
                      )}
                   />
                   <FormField
-                     control={createSectionForm.control}
+                     control={editSectionForm.control}
                      name="description"
                      render={({ field }) => (
                         <FormItem>
@@ -67,7 +91,7 @@ export default function CreateSection() {
                      )}
                   />
                   <FormField
-                     control={createSectionForm.control}
+                     control={editSectionForm.control}
                      name="color"
                      render={({ field }) => (
                         <FormItem className="flex items-center gap-x-6 flex-wrap">
@@ -85,7 +109,7 @@ export default function CreateSection() {
                      )}
                   />
                   <Button type="submit" className="w-full">
-                     Create
+                     {props.action}
                   </Button>
                </form>
             </Form>

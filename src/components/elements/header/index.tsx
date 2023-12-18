@@ -1,5 +1,6 @@
-import Link from "next/link";
 import Logo from "./logo";
+import Link from "next/link";
+import DropDown from "./dropDown";
 import ThemeToggle from "./themeToggle";
 import { homeRoute, userProfileRoute } from "@root/lib";
 
@@ -11,8 +12,13 @@ export default function Header() {
                <Logo />
             </div>
             <nav className="flex items-center gap-x-6">
-               <Link href={homeRoute}>Home</Link>
-               <Link href={userProfileRoute}>Account</Link>
+               <Link href={homeRoute} className="hidden sm:inline">
+                  Home
+               </Link>
+               <Link href={userProfileRoute} className="hidden sm:inline">
+                  Account
+               </Link>
+               <DropDown />
                <ThemeToggle />
             </nav>
          </section>

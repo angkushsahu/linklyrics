@@ -1,6 +1,6 @@
 import Link from "next/link";
 import LoadMore from "./loadMore";
-import CreateSection from "./createSection";
+import EditSection from "./editSection";
 import SectionSearchbar from "./sectionSearchbar";
 
 export default function LinkSection() {
@@ -11,7 +11,7 @@ export default function LinkSection() {
       <main className="center-container pt-8 pb-12 px-4">
          <section className="flex items-center justify-between">
             <h1 className="text-primary text-3xl font-semibold">Link Section</h1>
-            <CreateSection />
+            <EditSection action="Create" />
          </section>
          <SectionSearchbar />
          <section className="space-y-6">

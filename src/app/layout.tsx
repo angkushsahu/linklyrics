@@ -3,6 +3,7 @@ import type { PropsWithChildren } from "react";
 import { Inter } from "next/font/google";
 import "@root/styles/globals.css";
 // wrapper imports
+import { Toaster } from "@root/components/ui/toaster";
 import { ThemeProvider } from "@root/providers";
 import { Header } from "@root/components";
 
@@ -67,6 +68,7 @@ export default function RootLayout({ children }: PropsWithChildren) {
             <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
                <Header />
                <>{children}</>
+               <Toaster />
             </ThemeProvider>
          </body>
       </html>
