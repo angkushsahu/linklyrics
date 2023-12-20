@@ -4,9 +4,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { useState } from "react";
+import Link from "next/link";
 import * as z from "zod";
 
 import { Button, Input, Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@root/components";
+import { forgotPasswordRoute } from "@root/lib";
 
 const loginFormSchema = z.object({
    email: z.string().min(1, { message: "Please enter your e-mail" }).email({ message: "Please enter a valid e-mail" }),
@@ -59,6 +61,11 @@ export default function LoginForm() {
                         </span>
                      </div>
                      <FormMessage />
+                     <div className="text-right">
+                        <Link href={forgotPasswordRoute} className="text-muted-foreground text-xs">
+                           Forgot Password ?
+                        </Link>
+                     </div>
                   </FormItem>
                )}
             />
