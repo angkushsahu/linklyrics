@@ -1,33 +1,45 @@
 "use client";
 
+import { Button, Input, Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@root/components";
+import { SignupFormType, signupFormSchema } from "@root/validations";
+import { toast } from "@root/components/ui/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { trpc } from "@root/trpcQuery/clientQuery";
 import { Eye, EyeOff } from "lucide-react";
 import { useForm } from "react-hook-form";
+import { signIn } from "next-auth/react";
+import { homeRoute } from "@root/lib";
 import { useState } from "react";
-import * as z from "zod";
-
-import { Button, Input, Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@root/components";
-
-const signupFormSchema = z
-   .object({
-      name: z.string().min(1, { message: "Please enter your name" }),
-      email: z.string().min(1, { message: "Please enter your e-mail" }).email({ message: "Please enter a valid e-mail" }),
-      password: z.string().min(1, { message: "Please enter password" }),
-      confirmPassword: z.string().min(1, { message: "Please re-enter password" }),
-   })
-   .refine((data) => data.password === data.confirmPassword, { path: ["confirmPassword"], message: "Passwords do not match" });
 
 export default function SignupForm() {
    const [showPassword, setShowPassword] = useState(false);
    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-   const signupForm = useForm<z.infer<typeof signupFormSchema>>({
+   const signupForm = useForm<SignupFormType>({
       resolver: zodResolver(signupFormSchema),
       defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
    });
 
-   function onSignup(values: z.infer<typeof signupFormSchema>) {
-      console.log(values);
+   const { mutate: signupMutation, isLoading } = trpc.auth.register.useMutation({
+      async onSuccess(data) {
+         try {
+            const response = await signIn("credentials", { email: data.user.email, callbackUrl: homeRoute });
+            if (response && response.ok) {
+               toast({ title: "Registered user successfully" });
+               signupForm.reset();
+            } else if (response && response.error) toast({ title: `${response.error}`, variant: "destructive" });
+         } catch (error: unknown) {
+            if (error instanceof Error) toast({ title: error.message, variant: "destructive" });
+         }
+      },
+      onError(error) {
+         toast({ title: error.message, variant: "destructive" });
+      },
+   });
+
+   function onSignup(values: SignupFormType) {
+      if (isLoading) return;
+      signupMutation(values);
    }
 
    return (
@@ -106,7 +118,7 @@ export default function SignupForm() {
                   </FormItem>
                )}
             />
-            <Button type="submit" className="w-full">
+            <Button type="submit" className="w-full" disabled={isLoading}>
                Signup
             </Button>
          </form>

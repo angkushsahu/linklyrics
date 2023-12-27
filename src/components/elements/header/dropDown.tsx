@@ -11,10 +11,14 @@ export default function DropDown() {
          </DropdownMenuTrigger>
          <DropdownMenuContent>
             <DropdownMenuItem>
-               <Link href={homeRoute}>Home</Link>
+               <Link href={homeRoute} className="flex-1">
+                  Home
+               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem>
-               <Link href={userProfileRoute}>Account</Link>
+               <Link href={userProfileRoute} className="flex-1">
+                  Account
+               </Link>
             </DropdownMenuItem>
          </DropdownMenuContent>
       </DropdownMenu>

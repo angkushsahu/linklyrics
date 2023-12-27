@@ -1,31 +1,38 @@
 "use client";
 
+import { Button, Input, Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@root/components";
+import { changePasswordFormSchema, changePasswordFormType } from "@root/validations";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "@root/components/ui/use-toast";
+import { trpc } from "@root/trpcQuery/clientQuery";
+import { useSession } from "next-auth/react";
 import { Eye, EyeOff } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { useState } from "react";
-import * as z from "zod";
-
-import { Button, Input, Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@root/components";
-
-const changePasswordFormSchema = z
-   .object({
-      password: z.string().min(1, { message: "Please enter password" }),
-      confirmPassword: z.string().min(1, { message: "Please re-enter password" }),
-   })
-   .refine((data) => data.password === data.confirmPassword, { path: ["confirmPassword"], message: "Passwords do not match" });
 
 export default function ChangePasswordForm() {
+   const { data: session } = useSession();
    const [showPassword, setShowPassword] = useState(false);
    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-   const changePasswordForm = useForm<z.infer<typeof changePasswordFormSchema>>({
+   const changePasswordForm = useForm<changePasswordFormType>({
       resolver: zodResolver(changePasswordFormSchema),
       defaultValues: { password: "", confirmPassword: "" },
    });
 
-   function onChangePassword(values: z.infer<typeof changePasswordFormSchema>) {
-      console.log(values);
+   const { mutate: changePasswordMutation, isLoading } = trpc.user.changePassword.useMutation({
+      onSuccess() {
+         toast({ title: "Password updated successfully" });
+         changePasswordForm.reset();
+      },
+      onError(error) {
+         toast({ title: error.message, variant: "destructive" });
+      },
+   });
+
+   function onChangePassword(values: changePasswordFormType) {
+      if (isLoading) return;
+      if (session && session.user && session.user.id) changePasswordMutation({ id: session.user.id, password: values.password });
    }
 
    return (
@@ -77,7 +84,7 @@ export default function ChangePasswordForm() {
                   </FormItem>
                )}
             />
-            <Button type="submit" className="w-full">
+            <Button type="submit" className="w-full" disabled={isLoading}>
                Change
             </Button>
          </form>

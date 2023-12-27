@@ -1,23 +1,30 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
-
 import { Button, Input, Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@root/components";
-
-const forgotPasswordFormSchema = z.object({
-   email: z.string().min(1, { message: "Please enter your e-mail" }).email({ message: "Please enter a valid e-mail" }),
-});
+import { ForgotPasswordType, forgotPasswordFormSchema } from "@root/validations";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "@root/components/ui/use-toast";
+import { trpc } from "@root/trpcQuery/clientQuery";
+import { useForm } from "react-hook-form";
 
 export default function ForgotPasswordForm() {
-   const forgotPasswordForm = useForm<z.infer<typeof forgotPasswordFormSchema>>({
+   const forgotPasswordForm = useForm<ForgotPasswordType>({
       resolver: zodResolver(forgotPasswordFormSchema),
       defaultValues: { email: "" },
    });
 
-   function onForgotPassword(values: z.infer<typeof forgotPasswordFormSchema>) {
-      console.log(values);
+   const { mutate: forgotPasswordMutation, isLoading } = trpc.auth.forgotPassword.useMutation({
+      onSuccess(data) {
+         toast({ title: data.message });
+      },
+      onError(error) {
+         toast({ title: error.message, variant: "destructive" });
+      },
+   });
+
+   function onForgotPassword(values: ForgotPasswordType) {
+      if (isLoading) return;
+      forgotPasswordMutation({ email: values.email, originUrl: window.location.origin });
    }
 
    return (
@@ -36,7 +43,7 @@ export default function ForgotPasswordForm() {
                   </FormItem>
                )}
             />
-            <Button type="submit" className="w-full">
+            <Button type="submit" className="w-full" disabled={isLoading}>
                Submit
             </Button>
          </form>

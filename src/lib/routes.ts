@@ -8,3 +8,5 @@ export const resetPasswordRoute = "/auth/reset-password";
 export const changePasswordRoute = "/user/change-password";
 export const updateProfileRoute = "/user/update";
 export const userProfileRoute = "/user";
+// links routes
+export const linkSectionRoute = "/link-section";

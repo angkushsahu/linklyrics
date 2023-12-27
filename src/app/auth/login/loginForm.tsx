@@ -1,30 +1,45 @@
 "use client";
 
+import { Button, Input, Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@root/components";
+import { LoginFormType, loginFormSchema } from "@root/validations";
+import { forgotPasswordRoute, homeRoute } from "@root/lib";
+import { toast } from "@root/components/ui/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { trpc } from "@root/trpcQuery/clientQuery";
 import { Eye, EyeOff } from "lucide-react";
 import { useForm } from "react-hook-form";
+import { signIn } from "next-auth/react";
 import { useState } from "react";
 import Link from "next/link";
-import * as z from "zod";
-
-import { Button, Input, Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@root/components";
-import { forgotPasswordRoute } from "@root/lib";
-
-const loginFormSchema = z.object({
-   email: z.string().min(1, { message: "Please enter your e-mail" }).email({ message: "Please enter a valid e-mail" }),
-   password: z.string().min(1, { message: "Please enter password" }),
-});
 
 export default function LoginForm() {
    const [showPassword, setShowPassword] = useState(false);
 
-   const loginForm = useForm<z.infer<typeof loginFormSchema>>({
+   const loginForm = useForm<LoginFormType>({
       resolver: zodResolver(loginFormSchema),
       defaultValues: { email: "", password: "" },
    });
 
-   function onLogin(values: z.infer<typeof loginFormSchema>) {
-      console.log(values);
+   const { mutate: loginMutation, isLoading } = trpc.auth.login.useMutation({
+      async onSuccess(data) {
+         try {
+            const response = await signIn("credentials", { email: data.user.email, callbackUrl: homeRoute });
+            if (response && response.ok) {
+               toast({ title: "User logged in successfully" });
+               loginForm.reset();
+            } else if (response && response.error) toast({ title: `${response?.error}`, variant: "destructive" });
+         } catch (error: unknown) {
+            if (error instanceof Error) toast({ title: error.message, variant: "destructive" });
+         }
+      },
+      onError(error) {
+         toast({ title: error.message, variant: "destructive" });
+      },
+   });
+
+   function onLogin(values: LoginFormType) {
+      if (isLoading) return;
+      loginMutation(values);
    }
 
    return (
@@ -69,7 +84,7 @@ export default function LoginForm() {
                   </FormItem>
                )}
             />
-            <Button type="submit" className="w-full">
+            <Button type="submit" className="w-full" disabled={isLoading}>
                Login
             </Button>
          </form>

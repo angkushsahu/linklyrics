@@ -11,6 +11,10 @@ import {
    AlertDialogTitle,
    AlertDialogTrigger,
 } from "@root/components";
+import { toast } from "@root/components/ui/use-toast";
+import { signOut, useSession } from "next-auth/react";
+import { trpc } from "@root/trpcQuery/clientQuery";
+import { homeRoute } from "@root/lib";
 
 export interface ConfirmActionDialogProps {
    titleText: string;
@@ -32,7 +36,7 @@ export function ConfirmActionDialog({ onConfirm, titleText }: ConfirmActionDialo
             </AlertDialogHeader>
             <AlertDialogFooter>
                <AlertDialogCancel>Cancel</AlertDialogCancel>
-               <AlertDialogAction onClick={() => console.log("This is awesome")}>{titleText}</AlertDialogAction>
+               <AlertDialogAction onClick={onConfirm}>{titleText}</AlertDialogAction>
             </AlertDialogFooter>
          </AlertDialogContent>
       </AlertDialog>
@@ -40,9 +44,24 @@ export function ConfirmActionDialog({ onConfirm, titleText }: ConfirmActionDialo
 }
 
 export function Logout() {
-   return <ConfirmActionDialog titleText="Logout" onConfirm={() => console.log("Logout")} />;
+   return <ConfirmActionDialog titleText="Logout" onConfirm={() => signOut({ callbackUrl: homeRoute })} />;
 }
 
 export function DeleteAccount() {
-   return <ConfirmActionDialog titleText="Delete Account" onConfirm={() => console.log("Delete account")} />;
+   const { data: session } = useSession();
+
+   const { mutate: deleteUserMutation } = trpc.user.deleteUser.useMutation({
+      onSuccess() {
+         signOut({ callbackUrl: homeRoute });
+      },
+      onError(error) {
+         toast({ title: error.message, variant: "destructive" });
+      },
+   });
+
+   function onAccountDeletion() {
+      if (session && session.user && session.user.id) deleteUserMutation({ id: session.user.id });
+   }
+
+   return <ConfirmActionDialog titleText="Delete Account" onConfirm={onAccountDeletion} />;
 }

@@ -1,24 +1,62 @@
 "use client";
 
+import {
+   Button,
+   Input,
+   Form,
+   FormControl,
+   FormDescription,
+   FormField,
+   FormItem,
+   FormLabel,
+   FormMessage,
+   Skeleton,
+} from "@root/components";
+import { UserUpdateFormType, userUpdateFormSchema } from "@root/validations";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "@root/components/ui/use-toast";
+import { trpc } from "@root/trpcQuery/clientQuery";
+import { useSession } from "next-auth/react";
+import { userProfileRoute } from "@root/lib";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import * as z from "zod";
 
-import { Button, Input, Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@root/components";
-
-const userUpdateFormSchema = z.object({
-   name: z.string().min(1, { message: "Please enter your name" }),
-   email: z.string().min(1, { message: "Please enter your e-mail" }).email({ message: "Please enter a valid e-mail" }),
-});
+function SkeletonComponent() {
+   return <Skeleton className="h-10 w-full" />;
+}
 
 export default function UserUpdate() {
-   const userUpdateForm = useForm<z.infer<typeof userUpdateFormSchema>>({
+   const [sessionLoaded, setSessionLoaded] = useState(false);
+   const { data: session, update: updateSession } = useSession();
+   const router = useRouter();
+
+   const userUpdateForm = useForm<UserUpdateFormType>({
       resolver: zodResolver(userUpdateFormSchema),
       defaultValues: { name: "", email: "" },
    });
 
-   function onUserUpdate(values: z.infer<typeof userUpdateFormSchema>) {
-      console.log(values);
+   useEffect(() => {
+      userUpdateForm.reset({ email: session?.user.email, name: session?.user.name });
+      if (session?.user) setSessionLoaded(true);
+   }, [session, session?.user]);
+
+   const { mutate: updateUser, isLoading } = trpc.user.updateUser.useMutation({
+      async onSuccess(data) {
+         if (session && session.user) {
+            await updateSession({ ...session, user: { ...session.user, name: data.user.name, email: data.user.email } });
+            toast({ title: "Updated user successfully" });
+            router.push(userProfileRoute);
+         }
+      },
+      onError(error) {
+         toast({ title: error.message, variant: "destructive" });
+      },
+   });
+
+   function onUserUpdate(values: UserUpdateFormType) {
+      if (isLoading) return;
+      if (session && session.user && session.user.id) updateUser({ id: session.user.id as string, ...values });
    }
 
    return (
@@ -31,7 +69,7 @@ export default function UserUpdate() {
                   <FormItem>
                      <FormLabel>User Name</FormLabel>
                      <FormControl>
-                        <Input placeholder="e.g. John Doe" {...field} type="text" />
+                        {sessionLoaded ? <Input placeholder="e.g. John Doe" {...field} type="text" /> : <SkeletonComponent />}
                      </FormControl>
                      <FormDescription>This is your public display name.</FormDescription>
                      <FormMessage />
@@ -45,15 +83,23 @@ export default function UserUpdate() {
                   <FormItem>
                      <FormLabel>User E-mail</FormLabel>
                      <FormControl>
-                        <Input placeholder="e.g. johndoe@gmail.com" {...field} type="email" />
+                        {sessionLoaded ? (
+                           <Input placeholder="e.g. johndoe@gmail.com" {...field} type="email" />
+                        ) : (
+                           <SkeletonComponent />
+                        )}
                      </FormControl>
                      <FormMessage />
                   </FormItem>
                )}
             />
-            <Button type="submit" className="w-full">
-               Update
-            </Button>
+            {sessionLoaded ? (
+               <Button type="submit" className="w-full" disabled={isLoading}>
+                  Update
+               </Button>
+            ) : (
+               <Skeleton className="h-10 w-full bg-primary" />
+            )}
          </form>
       </Form>
    );

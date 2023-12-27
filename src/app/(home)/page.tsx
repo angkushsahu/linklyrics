@@ -1,9 +1,14 @@
-import Link from "next/link";
-import { signupRoute } from "@root/lib";
-import { Button } from "@root/components";
+import { linkSectionRoute, signupRoute } from "@root/lib";
 import BackgroundImage from "./backgroundImage";
+import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
+import { Button } from "@root/components";
+import Link from "next/link";
 
-export default function Home() {
+export default async function Home() {
+   const session = await getServerSession();
+   if (session) redirect(linkSectionRoute);
+
    return (
       <main>
          <BackgroundImage />

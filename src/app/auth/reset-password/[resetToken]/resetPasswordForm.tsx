@@ -1,31 +1,41 @@
 "use client";
 
+import { Button, Input, Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@root/components";
+import { ResetPasswordType, resetPasswordFormSchema } from "@root/validations";
+import { useParams, useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "@root/components/ui/use-toast";
+import { trpc } from "@root/trpcQuery/clientQuery";
 import { Eye, EyeOff } from "lucide-react";
 import { useForm } from "react-hook-form";
+import { loginRoute } from "@root/lib";
 import { useState } from "react";
-import * as z from "zod";
-
-import { Button, Input, Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@root/components";
-
-const resetPasswordFormSchema = z
-   .object({
-      password: z.string().min(1, { message: "Please enter password" }),
-      confirmPassword: z.string().min(1, { message: "Please re-enter password" }),
-   })
-   .refine((data) => data.password === data.confirmPassword, { path: ["confirmPassword"], message: "Passwords do not match" });
 
 export default function ResetPasswordForm() {
+   const router = useRouter();
+   const params: { resetToken: string } = useParams();
    const [showPassword, setShowPassword] = useState(false);
    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-   const resetPasswordForm = useForm<z.infer<typeof resetPasswordFormSchema>>({
+   const resetPasswordForm = useForm<ResetPasswordType>({
       resolver: zodResolver(resetPasswordFormSchema),
       defaultValues: { password: "", confirmPassword: "" },
    });
 
-   function onResetPassword(values: z.infer<typeof resetPasswordFormSchema>) {
-      console.log(values);
+   const { mutate: resetPasswordMutation, isLoading } = trpc.auth.resetPassword.useMutation({
+      onSuccess(data) {
+         toast({ title: data.message });
+         resetPasswordForm.reset();
+         router.replace(loginRoute);
+      },
+      onError(error) {
+         toast({ title: error.message, variant: "destructive" });
+      },
+   });
+
+   function onResetPassword(values: ResetPasswordType) {
+      if (isLoading) return;
+      resetPasswordMutation({ password: values.password, resetUrl: params.resetToken });
    }
 
    return (
@@ -77,7 +87,7 @@ export default function ResetPasswordForm() {
                   </FormItem>
                )}
             />
-            <Button type="submit" className="w-full">
+            <Button type="submit" className="w-full" disabled={isLoading}>
                Reset
             </Button>
          </form>

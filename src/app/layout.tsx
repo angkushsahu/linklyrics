@@ -3,8 +3,9 @@ import type { PropsWithChildren } from "react";
 import { Inter } from "next/font/google";
 import "@root/styles/globals.css";
 // wrapper imports
+import { NextauthProvider, ThemeProvider, TrpcProvider } from "@root/providers";
 import { Toaster } from "@root/components/ui/toaster";
-import { ThemeProvider } from "@root/providers";
+import { getServerSession } from "next-auth";
 import { Header } from "@root/components";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -59,16 +60,22 @@ export const metadata: Metadata = {
    },
 };
 
-export default function RootLayout({ children }: PropsWithChildren) {
+export default async function RootLayout({ children }: PropsWithChildren) {
+   const session = await getServerSession();
+
    return (
       <html lang="en">
          <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
          <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
          <body className={`${inter.className} antialiased`}>
             <ThemeProvider>
-               <Header />
-               <>{children}</>
-               <Toaster />
+               <TrpcProvider>
+                  <NextauthProvider session={session}>
+                     <Header />
+                     <>{children}</>
+                     <Toaster />
+                  </NextauthProvider>
+               </TrpcProvider>
             </ThemeProvider>
          </body>
       </html>
